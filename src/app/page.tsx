@@ -1,7 +1,9 @@
 import Image from "next/image";
+import { Features } from "@/components/Features";
 import { HowItWorks } from "@/components/HowItWorks";
 import { InstallCommand } from "@/components/InstallCommand";
 import { PeerListMockup } from "@/components/PeerListMockup";
+import { TrustModel } from "@/components/TrustModel";
 
 const TRUST_SIGNALS = [
   "MIT licensed",
@@ -85,6 +87,8 @@ export default function Home() {
         </section>
 
         <HowItWorks />
+        <Features />
+        <TrustModel />
       </main>
 
       <footer className="border-t border-border py-6 text-center text-sm text-foreground-muted">
