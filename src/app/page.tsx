@@ -40,7 +40,7 @@ export default function Home() {
             </div>
           </div>
           <div className="relative mx-auto grid w-full max-w-7xl items-center gap-12 px-6 pt-6 pb-24 lg:grid-cols-[1.4fr_1fr] lg:gap-16 lg:pt-10">
-            <div className="flex flex-col items-start">
+            <div className="flex min-w-0 flex-col items-start">
               <h1 className="text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl">
                 End-to-end encrypted file sharing that{" "}
                 <span className="text-pouch-strong">never leaves your network</span>.
@@ -80,7 +80,7 @@ export default function Home() {
               </ul>
             </div>
 
-            <div className="relative w-full lg:justify-self-end">
+            <div className="relative min-w-0 w-full lg:justify-self-end">
               <div
                 aria-hidden
                 className="absolute -inset-4 rounded-3xl bg-pouch-soft blur-2xl"

@@ -56,11 +56,12 @@ export function HowItWorks() {
           {STEPS.map((step, idx) => (
             <li
               key={step.number}
-              className="grid items-center gap-8 lg:grid-cols-2 lg:gap-14"
+              className="grid min-w-0 items-center gap-8 lg:grid-cols-2 lg:gap-14"
             >
               <div
                 className={
-                  idx % 2 === 0 ? "lg:order-1" : "lg:order-2"
+                  "min-w-0 " +
+                  (idx % 2 === 0 ? "lg:order-1" : "lg:order-2")
                 }
               >
                 <span
@@ -78,7 +79,8 @@ export function HowItWorks() {
               </div>
               <div
                 className={
-                  idx % 2 === 0 ? "lg:order-2" : "lg:order-1"
+                  "min-w-0 " +
+                  (idx % 2 === 0 ? "lg:order-2" : "lg:order-1")
                 }
               >
                 {step.visual}

@@ -123,6 +123,15 @@
   }
 }
 
+/* Belt-and-braces guard: any nested flex/grid item that doesn't shrink
+   below its intrinsic content (e.g. the unwrapped <pre> in TerminalMockup
+   or the long curl URL in InstallCommand) must not be allowed to widen
+   the document past the viewport on mobile. */
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

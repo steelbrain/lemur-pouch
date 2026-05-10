@@ -30,7 +30,7 @@ export function TerminalMockup() {
           ~/lemur-pouch
         </span>
       </div>
-      <pre className="overflow-x-auto px-4 py-4 font-mono text-xs leading-relaxed sm:text-sm">
+      <pre className="w-full max-w-full overflow-x-auto px-4 py-4 font-mono text-xs leading-relaxed sm:text-sm">
         {LINES.map((line, idx) => (
           <div key={idx} className="flex gap-2">
             {line.kind === "prompt" ? (
