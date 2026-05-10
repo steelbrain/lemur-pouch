@@ -1,0 +1,395 @@
+name: Docker
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  # The image lives at ghcr.io/<owner>/lemur-pouch — derived from the
+  # repo's owner. Adjust if republishing under a different org.
+  #
+  # The published image is a unified multi-platform manifest list
+  # spanning linux/amd64, linux/arm64, and windows/amd64. A single
+  # `docker pull lemur-pouch:latest` resolves to the right per-OS+arch
+  # image automatically — Windows users do NOT need a special tag.
+  # That's why this workflow has 4 jobs: build each platform's image
+  # by digest only, then a merge job assembles all digests into one
+  # manifest list per public tag.
+  IMAGE_NAME: ${{ github.repository_owner }}/lemur-pouch
+
+jobs:
+  # Linux platforms run as a 2-cell matrix on ubuntu-latest. Each cell
+  # builds for one platform and pushes by digest only (no tag). The
+  # merge job at the end assembles the public tags spanning all
+  # platforms.
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Set platform slug
+        id: slug
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: echo "slug=${PLATFORM//\//-}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+
+      # buildx + qemu let us cross-build linux/arm64 from an amd64
+      # runner. The Go cross-compile means the toolchain itself runs
+      # natively (see the Dockerfile's --platform=$BUILDPLATFORM on
+      # each builder stage); qemu is only used for the runtime base
+      # image's arch-specific assembly.
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Skip login on PRs — the workflow still builds (to validate the
+      # Dockerfile) but doesn't push (push gated below).
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Labels only — tags are claimed later by the merge job on the
+      # final manifest list, never on individual platform digests.
+      - name: Compute labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # Override auto-derived OCI fields — metadata-action pulls
+          # title/description/source from the GitHub repo, which on a
+          # private mirror doesn't match the project's identity. An
+          # empty auto-derived description silently overrides the
+          # Dockerfile LABEL via build-push-action's `--label` flags.
+          labels: |
+            org.opencontainers.image.title=LemurPouch
+            org.opencontainers.image.description=LemurPouch — LAN file-sharing relay (Go + React), outbound TCP only, end-to-end encrypted between paired peers.
+            org.opencontainers.image.source=https://github.com/steelbrain/lemur-pouch
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # push-by-digest=true → image is uploaded but no tag is
+          # claimed. The digest comes back as steps.build.outputs.digest.
+          # On PRs we still build (Dockerfile validation) but skip
+          # the push.
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
+          # Per-platform cache scope so amd64 and arm64 don't thrash
+          # each other's cache entries.
+          cache-from: type=gha,scope=${{ steps.slug.outputs.slug }}
+          cache-to: type=gha,mode=max,scope=${{ steps.slug.outputs.slug }}
+
+      - name: Export digest
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p /tmp/digests
+          digest='${{ steps.build.outputs.digest }}'
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ steps.slug.outputs.slug }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # Cross-compile the Windows .exe on a Linux runner (much faster than
+  # running Go inside a Windows container build). The .exe then ships
+  # to the windows-2022 runner that builds the actual container image.
+  #
+  # Note: release.yml's build-binaries matrix also produces a
+  # windows/amd64 binary, but for the standalone .zip — we don't share
+  # the artifact across workflows because cross-workflow artifact
+  # plumbing is more cost than the ~40s saved.
+  build-windows-binary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web/ deps
+        working-directory: web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: web
+        run: npm run build
+
+      # vite empties web/dist before each build, removing the .gitkeep
+      # sentinel that lets //go:embed compile from a fresh clone.
+      - name: Restore .gitkeep
+        run: touch web/dist/.gitkeep
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Cross-compile windows-amd64 binary
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: '0'
+        run: |
+          go build -trimpath -ldflags="-s -w" -o lemur-pouch.exe .
+
+      - name: Upload .exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-amd64-exe
+          path: lemur-pouch.exe
+          retention-days: 1
+
+  # Windows container — built on a native Windows runner because
+  # Linux runners can't build Windows-base images (the Docker daemon
+  # must be in Windows-container mode, which requires a Windows host).
+  # Pushes by digest only; the merge job assembles the public tags.
+  build-windows-image:
+    needs: build-windows-binary
+    runs-on: windows-2022
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download windows-amd64 .exe
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-amd64-exe
+          path: docker-context
+
+      - name: Stage Dockerfile
+        shell: pwsh
+        run: Copy-Item Dockerfile.windows docker-context\Dockerfile
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # We deliberately don't use docker/setup-buildx-action here.
+      # Its default `docker-container` driver boots a BuildKit
+      # container from `moby/buildkit:buildx-stable-1`, which is a
+      # Linux-only image and fails to start on a Windows host
+      # ("no matching manifest for windows/amd64 in the manifest
+      # list entries"). The `docker` driver would work but doesn't
+      # support `outputs: type=image,push-by-digest=true` anyway, so
+      # we'd lose the buildx benefit. Plain `docker build` + `docker
+      # push` is the smallest reliable shape and gives us a digest
+      # via push output, which is all the merge job needs.
+      - name: Build image
+        shell: bash
+        env:
+          STAGE_TAG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:_stage-windows-amd64-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          docker build -t "$STAGE_TAG" docker-context
+          # Stash for later steps so the tag derivation only happens once.
+          echo "STAGE_TAG=$STAGE_TAG" >> "$GITHUB_ENV"
+
+      - name: Push and capture digest
+        if: github.event_name != 'pull_request'
+        id: push
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The push has to claim a tag — there's no push-by-digest
+          # without buildx. We use a clearly-internal `_stage-*`
+          # name (underscore prefix sorts/visually marks it as
+          # not-for-public-consumption) so it stands out from the
+          # public tags the merge job creates. The merge job
+          # references this image by digest, so the tag is just a
+          # vehicle for the bytes; it can be deleted from the GHCR
+          # package settings page when convenient.
+          push_output=$(docker push "$STAGE_TAG" 2>&1)
+          echo "$push_output"
+          # `docker push` ends with `<tag>: digest: sha256:<hex64>
+          # size: <n>`. Layer hashes earlier in the output are
+          # truncated to 12 chars, so `[a-f0-9]{64}` only matches the
+          # final manifest digest. tail -1 is belt-and-suspenders.
+          digest=$(echo "$push_output" | grep -oE 'sha256:[a-f0-9]{64}' | tail -1)
+          if [ -z "$digest" ]; then
+            # Fallback: ask the daemon directly. After a successful
+            # push, RepoDigests is populated.
+            digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$STAGE_TAG" 2>/dev/null | sed 's/.*@//')
+          fi
+          if [ -z "$digest" ]; then
+            echo "::error::Could not determine digest after push"
+            exit 1
+          fi
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Export digest
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          mkdir -p digests
+          digest='${{ steps.push.outputs.digest }}'
+          touch "digests/${digest#sha256:}"
+
+      - name: Upload digest
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-windows-amd64
+          path: digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # Assemble all per-platform digests into one manifest list per public
+  # tag. After this job, `docker pull lemur-pouch:<tag>` resolves to
+  # the right image for the host's OS+arch automatically.
+  #
+  # Atomicity: if any platform fails to build/push, this job doesn't
+  # run, so existing public tags keep pointing at the previous good
+  # manifest. Tag updates are all-or-nothing.
+  merge:
+    needs:
+      - build-linux
+      - build-windows-image
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Download all digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digest-*
+          merge-multiple: true
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # docker/metadata-action turns the workflow trigger into a set
+      # of public tags:
+      #   - push to main:        :main, :latest, :sha-<short>
+      #   - tag vX.Y.Z:          :X.Y.Z, :X.Y, :X, :latest, :sha-<short>
+      #   - PR #N:               not reached (this job is gated above)
+      - name: Compute tags
+        id: meta
+        uses: docker/metadata-action@v5
+        env:
+          # Emit annotations targeted at the manifest list (index).
+          # GHCR's package page reads org.opencontainers.image.description
+          # off the index annotations, NOT off the per-platform image
+          # configs — the Dockerfile's LABEL only flows to the latter.
+          # Without this, GHCR warns the manifest is missing a description.
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # Override auto-derived OCI fields on the index. Use
+          # `annotations:`, NOT `labels:` — only `annotations:` reaches
+          # the manifest list under DOCKER_METADATA_ANNOTATIONS_LEVELS=index
+          # above. `labels:` covers per-platform image configs (handled
+          # in build-linux / build-windows-image).
+          annotations: |
+            org.opencontainers.image.title=LemurPouch
+            org.opencontainers.image.description=LemurPouch — LAN file-sharing relay (Go + React), outbound TCP only, end-to-end encrypted between paired peers.
+            org.opencontainers.image.source=https://github.com/steelbrain/lemur-pouch
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Create manifest list
+        working-directory: /tmp/digests
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+          ANNOTATIONS: ${{ steps.meta.outputs.annotations }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          # Build the list of @sha256:... refs from the per-platform
+          # digest files (each file's name is the digest's hex part).
+          # nullglob keeps an empty directory from expanding `*` to a
+          # literal `*` and producing a malformed `@sha256:*` ref.
+          refs=()
+          for d in *; do
+            refs+=("${IMAGE}@sha256:${d}")
+          done
+          if [ ${#refs[@]} -eq 0 ]; then
+            echo "no per-platform digest files found in /tmp/digests" >&2
+            exit 1
+          fi
+          # metadata-action emits annotations one per line as
+          # `index:KEY=VALUE`. Convert each to a --annotation flag for
+          # `docker buildx imagetools create`. With
+          # DOCKER_METADATA_ANNOTATIONS_LEVELS=index above, every line
+          # already carries the right level prefix.
+          annotation_args=()
+          while IFS= read -r ann; do
+            [ -z "$ann" ] && continue
+            annotation_args+=(--annotation "$ann")
+          done <<< "$ANNOTATIONS"
+          # Create one manifest list per computed public tag, all
+          # pointing at the same set of platform digests.
+          while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            docker buildx imagetools create "${annotation_args[@]}" -t "$tag" "${refs[@]}"
+          done <<< "$TAGS"
+
+      - name: Inspect manifest
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+          # Spot-check the first computed tag — confirms the manifest
+          # actually contains every platform we expect.
+          tag=$(echo "$TAGS" | head -n1)
+          docker buildx imagetools inspect "$tag"

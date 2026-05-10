@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1
+#
+# Windows-container image for LemurPouch (windows/amd64 only — Windows
+# Server containers don't ship an arm64 base image).
+#
+# Both this and the sibling Linux Dockerfile are driven by
+# .github/workflows/docker.yml. That workflow builds each platform's
+# image by digest (no tag claimed), then a final merge job assembles
+# all platforms — linux/amd64, linux/arm64, windows/amd64 — into one
+# multi-platform manifest list per public tag. The result: a single
+# `docker pull lemur-pouch:latest` resolves to the right per-OS+arch
+# image automatically, with no Windows-specific tag suffix.
+#
+# This Dockerfile expects lemur-pouch.exe to already be present in
+# the build context. docker.yml's build-windows-binary job
+# cross-compiles it on a Linux runner and ships it to the windows-2022
+# runner that builds this image. Cross-compiling on Linux is much
+# faster than running the Go toolchain inside a Windows container
+# build.
+#
+# nanoserver:ltsc2022 matches the windows-2022 GitHub runner family.
+# It's the smallest Windows base with a working runtime for a static
+# Go exe; we deliberately don't pull a fuller image since our binary
+# has no shared-library dependencies.
+
+FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
+
+COPY lemur-pouch.exe C:\\lemur-pouch.exe
+
+EXPOSE 8080
+
+# Mirror the Linux Dockerfile's ENV so main.go's container-aware
+# startup banner ("those interface IPs are container-internal") fires
+# here too. See the long comment in main.go's logReachableURLs for
+# why we use a project-specific env var instead of probing /.dockerenv.
+ENV LEMURPOUCH_IN_CONTAINER=1
+
+ENTRYPOINT ["C:\\lemur-pouch.exe"]
+
+# OCI labels — mirror the Linux Dockerfile so the per-platform image
+# config carries the same metadata. The unified manifest list also
+# gets these via annotations set in .github/workflows/docker.yml's
+# merge job (which is what GHCR's package page reads).
+LABEL org.opencontainers.image.title="LemurPouch"
+LABEL org.opencontainers.image.description="LemurPouch — LAN file-sharing relay (Go + React), outbound TCP only, end-to-end encrypted between paired peers."
+LABEL org.opencontainers.image.source="https://github.com/steelbrain/lemur-pouch"
+LABEL org.opencontainers.image.licenses="MIT"

@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Frontend build output (embedded into the Go binary at release time;
+# never tracked except for the .gitkeep sentinel that lets //go:embed
+# compile before `npm run build` has been run).
+web/dist/*
+!web/dist/.gitkeep
+
+# Built Go binaries
+/lemur-pouch
+/lemur-pouch.exe
+
+# Editor / OS
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# scripts/review.sh per-iteration logs
+.review-logs/

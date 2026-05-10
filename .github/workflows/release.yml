@@ -1,0 +1,161 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Default to least-privilege. The release job re-grants contents:write
+# only when it actually publishes a GitHub Release on a tag push.
+permissions:
+  contents: read
+
+jobs:
+  # The Vite output is identical regardless of GOOS/GOARCH (it's all
+  # static JS), so build it once and let every binary cell pull the
+  # same artifact instead of re-running npm install / vite build six
+  # times.
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: web
+        run: npm run build
+
+      # vite empties web/dist/ before each build, removing the
+      # .gitkeep sentinel that lets //go:embed compile from a fresh
+      # clone. Restore it before uploading so the binary jobs can
+      # `go:embed all:web/dist` without surprises.
+      - name: Restore .gitkeep
+        run: touch web/dist/.gitkeep
+
+      - name: Upload web/dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+          retention-days: 1
+
+  build-binaries:
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    strategy:
+      # Don't cancel a Windows build just because Linux failed (and
+      # vice versa) — it's useful to see all six failures at once.
+      fail-fast: false
+      matrix:
+        include:
+          - { goos: darwin,  goarch: amd64, archive: tar.gz, ext: '' }
+          - { goos: darwin,  goarch: arm64, archive: tar.gz, ext: '' }
+          - { goos: linux,   goarch: amd64, archive: tar.gz, ext: '' }
+          - { goos: linux,   goarch: arm64, archive: tar.gz, ext: '' }
+          - { goos: windows, goarch: amd64, archive: zip,    ext: '.exe' }
+          - { goos: windows, goarch: arm64, archive: zip,    ext: '.exe' }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download web/dist
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+
+      # CGO=0 keeps every target a single static binary with no libc
+      # dependency. None of our deps need cgo (verified: stdlib +
+      # coder/websocket + golang.org/x/crypto + tyler-smith/go-bip39).
+      - name: Cross-compile binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p out
+          go build -trimpath -ldflags="-s -w" \
+            -o "out/lemur-pouch${{ matrix.ext }}" .
+
+      - name: Package archive
+        env:
+          OS: ${{ matrix.goos }}
+          ARCH: ${{ matrix.goarch }}
+          ARCHIVE: ${{ matrix.archive }}
+          EXT: ${{ matrix.ext }}
+        run: |
+          set -euo pipefail
+          name="lemur-pouch-${OS}-${ARCH}"
+          mkdir -p dist
+          if [ "$ARCHIVE" = "zip" ]; then
+            (cd out && zip -j "../dist/${name}.zip" "lemur-pouch${EXT}")
+          else
+            tar -C out -czf "dist/${name}.tar.gz" "lemur-pouch${EXT}"
+          fi
+          (cd dist && sha256sum "${name}.${ARCHIVE}" \
+            > "${name}.${ARCHIVE}.sha256")
+
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: lemur-pouch-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            dist/lemur-pouch-${{ matrix.goos }}-${{ matrix.goarch }}.${{ matrix.archive }}
+            dist/lemur-pouch-${{ matrix.goos }}-${{ matrix.goarch }}.${{ matrix.archive }}.sha256
+          retention-days: 90
+
+  release:
+    # Tag pushes only — never on branch pushes or PRs.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: lemur-pouch-*
+          merge-multiple: true
+
+      # Combine the per-archive .sha256 sidecars from each matrix cell
+      # into one SHA256SUMS so users can `sha256sum -c SHA256SUMS`
+      # against the release downloads.
+      - name: Aggregate checksums
+        run: |
+          set -euo pipefail
+          cd dist
+          cat *.sha256 > SHA256SUMS
+          rm *.sha256
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/lemur-pouch-*.tar.gz
+            dist/lemur-pouch-*.zip
+            dist/SHA256SUMS
+          generate_release_notes: true
+          fail_on_unmatched_files: true

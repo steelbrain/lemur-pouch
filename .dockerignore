@@ -1,0 +1,33 @@
+# Keep the build context lean — anything not strictly needed by the
+# Dockerfile stages should be ignored. Smaller context = faster builds
+# and no chance of accidentally shipping host artifacts into the image.
+
+# Node / build artifacts (Stage 1 generates them fresh inside the image)
+web/node_modules
+web/dist
+
+# Go binary outputs
+/lemur-pouch
+/lemur-pouch.exe
+
+# Per-loop transcripts from scripts/review.sh
+.review-logs
+
+# Editor / OS
+.DS_Store
+.vscode
+.idea
+*.swp
+
+# Git internals — the Dockerfile doesn't need history. Saves ~tens of MB
+# on a long-lived repo and avoids leaking commit metadata into image
+# layers via accidental `COPY .` paths.
+.git
+.gitignore
+
+# Documentation that doesn't belong in the runtime image
+*.md
+!web/README.md   # exception: web/README.md is referenced by Vite tooling
+
+# CI configuration (irrelevant to the image build)
+.github
