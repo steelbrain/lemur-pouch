@@ -25,7 +25,9 @@ The Protocol Reference appendix below is the source of truth for the protocol, t
 │   └── release.yml        ← 6-cell binary matrix → workflow artifacts on main, GitHub Release on tags
 ├── scripts/
 │   ├── dev.sh             ← runs `go run .` + `npm run dev` together with HMR
-│   └── build.sh           ← bundles frontend, then `go build` (cross-compile via GOOS/GOARCH)
+│   ├── build.sh           ← bundles frontend, then `go build` (cross-compile via GOOS/GOARCH)
+│   ├── install.sh         ← curl|sh installer: downloads latest release, verifies SHA256, exec's relay
+│   └── install.ps1        ← irm|iex installer for native Windows (mirrors install.sh)
 ├── main.go                ← relay entry point (composes the parts in internal/)
 ├── internal/
 │   ├── cryptoid/          ← Ed25519 + X25519 identity, BIP-39 fingerprint
@@ -76,7 +78,7 @@ For any non-trivial change, run the full triad:
 2. `cd web && npm test && npx tsc --noEmit && npm run build`
 3. `go vet ./internal/... . && (cd web && npm run lint)`
 
-`npm run lint` has 4 pre-existing `no-explicit-any` errors in `client.test.ts` (lines 43, 50, 54, 100). They predate the current era; don't fix them as part of unrelated work, don't introduce new ones.
+`npm run lint` is clean (exit 0, no warnings). Keep it that way — don't introduce new `no-explicit-any` or other rule violations as part of unrelated work.
 
 ## Code conventions
 
