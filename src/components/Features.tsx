@@ -30,7 +30,7 @@ const FEATURES: readonly Feature[] = [
   {
     title: "Works on locked-down networks",
     body:
-      "Plain outbound WebSocket over TCP. No WebRTC, no UDP, no STUN, no inbound ports — runs through corporate firewalls and captive portals that break everything else.",
+      "Plain outbound WebSocket over TCP. No WebRTC, no UDP, no STUN, no inbound ports — runs through corporate firewalls that break everything else.",
     icon: (
       <svg viewBox="0 0 24 24" className={iconClass} {...iconStroke}>
         <path d="M3 8h18M3 16h18M3 8v8M21 8v8M3 12h18M9 8v4M15 12v4" />
