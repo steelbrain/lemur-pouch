@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://lemurpouch.com"),
   title: "LemurPouch — LAN file sharing, simplified",
   description:
-    "End-to-end encrypted file sharing that works on the most restrictive networks. Coming soon.",
+    "End-to-end encrypted file sharing that works on the most restrictive networks.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -29,8 +29,22 @@ export const metadata: Metadata = {
   openGraph: {
     title: "LemurPouch — LAN file sharing, simplified",
     description:
-      "End-to-end encrypted file sharing that works on the most restrictive networks. Coming soon.",
-    images: ["/logo.png"],
+      "End-to-end encrypted file sharing that works on the most restrictive networks.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1672,
+        height: 941,
+        alt: "LemurPouch — end-to-end encrypted file sharing that never leaves your network",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LemurPouch — LAN file sharing, simplified",
+    description:
+      "End-to-end encrypted file sharing that works on the most restrictive networks.",
+    images: ["/og-image.png"],
   },
 };
 
