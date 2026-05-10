@@ -28,7 +28,46 @@ The full protocol, threat model, and wire format live in the [Protocol Reference
 
 ## Run it
 
-### Docker (recommended)
+### One-line install (recommended)
+
+Downloads the latest release, verifies its SHA256 against the release's `SHA256SUMS`, drops it into your platform's per-user data directory, and runs it.
+
+**macOS / Linux:**
+
+```sh
+curl -fsSL https://lemurpouch.com/install.sh | sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://lemurpouch.com/install.ps1 | iex
+```
+
+The binary lives at:
+
+| Platform | Path                                                         |
+|----------|--------------------------------------------------------------|
+| Linux    | `${XDG_DATA_HOME:-$HOME/.local/share}/lemur-pouch/lemur-pouch` |
+| macOS    | `~/Library/Application Support/lemur-pouch/lemur-pouch`      |
+| Windows  | `%LOCALAPPDATA%\lemur-pouch\lemur-pouch.exe`                 |
+
+Re-running the script is idempotent — the download is skipped if the binary is already there. Set `LP_FORCE=1` (or `$env:LP_FORCE='1'`) to overwrite.
+
+To pass relay flags ([see Bind address](#bind-address)), append them after `sh -s --`:
+
+```sh
+curl -fsSL https://lemurpouch.com/install.sh | sh -s -- --listen 0.0.0.0:9000
+```
+
+To pass flags on Windows, save the script first:
+
+```powershell
+irm https://lemurpouch.com/install.ps1 -OutFile install.ps1
+powershell -ExecutionPolicy Bypass -File .\install.ps1 --listen 0.0.0.0:9000
+```
+
+### Docker
 
 ```sh
 docker run --rm -p 8080:8080 ghcr.io/steelbrain/lemur-pouch:latest
