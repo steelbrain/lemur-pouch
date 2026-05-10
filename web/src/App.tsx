@@ -1443,10 +1443,12 @@ function NoticeList({
 
 // SendFileButton wraps a hidden <input type="file"> in a styled
 // <label>. Clicking the label triggers the input's native picker via
-// the label-input association; selecting a file fires onChange, and we
-// reset value="" so picking the same file again still triggers
-// onChange. Per-friend instance: clicking opens the picker for that
-// specific friend.
+// the label-input association; selecting one or more files fires
+// onChange, and we reset value="" so picking the same files again
+// still triggers onChange. Per-friend instance: clicking opens the
+// picker for that specific friend; multi-select fans out into one
+// onSendFile call per file (each becomes an independent transfer
+// with its own transferId, so the recipient gets one offer per file).
 function SendFileButton({
   peer,
   onSendFile,
@@ -1461,10 +1463,13 @@ function SendFileButton({
       <input
         ref={inputRef}
         type="file"
+        multiple
         style={{ display: 'none' }}
         onChange={(e) => {
-          const f = e.target.files?.[0]
-          if (f) onSendFile(peer, f)
+          const files = e.target.files
+          if (files) {
+            for (const f of Array.from(files)) onSendFile(peer, f)
+          }
           // Reset so the next pick of the SAME file still fires onChange
           // (browsers de-dup against the previous selection otherwise).
           if (inputRef.current) inputRef.current.value = ''
