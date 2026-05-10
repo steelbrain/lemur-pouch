@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Features } from "@/components/Features";
 import { HowItWorks } from "@/components/HowItWorks";
 import { InstallCommand } from "@/components/InstallCommand";
+import { InstallSection } from "@/components/InstallSection";
 import { PeerListMockup } from "@/components/PeerListMockup";
 import { TrustModel } from "@/components/TrustModel";
 
@@ -89,18 +90,86 @@ export default function Home() {
         <HowItWorks />
         <Features />
         <TrustModel />
+        <InstallSection />
       </main>
 
-      <footer className="border-t border-border py-6 text-center text-sm text-foreground-muted">
-        <p>
-          © {new Date().getFullYear()} LemurPouch ·{" "}
-          <a
-            className="text-accent hover:text-accent-strong hover:underline"
-            href="https://github.com/steelbrain/lemur-pouch"
-          >
-            GitHub
-          </a>
-        </p>
+      <footer className="border-t border-border bg-background-sunken/40">
+        <div className="mx-auto w-full max-w-6xl px-6 py-12">
+          <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2.5">
+                <Image
+                  src="/logo.png"
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="h-7 w-7 rounded-lg"
+                />
+                <span className="text-sm font-semibold text-foreground">
+                  LemurPouch
+                </span>
+              </div>
+              <p className="max-w-sm text-sm leading-relaxed text-foreground-muted">
+                End-to-end encrypted LAN file sharing that runs on the network
+                you&rsquo;ve got. Built with Go, React, and{" "}
+                <a
+                  href="https://paulmillr.com/noble/"
+                  className="text-accent hover:text-accent-strong hover:underline"
+                >
+                  @noble
+                </a>{" "}
+                crypto.
+              </p>
+            </div>
+
+            <nav
+              aria-label="Project links"
+              className="grid grid-cols-2 gap-x-10 gap-y-2 text-sm sm:gap-x-12"
+            >
+              <a
+                href="https://github.com/steelbrain/lemur-pouch"
+                className="text-foreground-muted hover:text-foreground"
+              >
+                Source
+              </a>
+              <a
+                href="https://github.com/steelbrain/lemur-pouch/releases"
+                className="text-foreground-muted hover:text-foreground"
+              >
+                Releases
+              </a>
+              <a
+                href="https://github.com/steelbrain/lemur-pouch/blob/main/AGENTS.md"
+                className="text-foreground-muted hover:text-foreground"
+              >
+                Protocol spec
+              </a>
+              <a
+                href="https://github.com/steelbrain/lemur-pouch/issues"
+                className="text-foreground-muted hover:text-foreground"
+              >
+                Issues
+              </a>
+              <a
+                href="https://github.com/steelbrain/lemur-pouch/blob/main/LICENSE.md"
+                className="text-foreground-muted hover:text-foreground"
+              >
+                MIT license
+              </a>
+              <a
+                href="https://lemurpouch.com"
+                className="text-foreground-muted hover:text-foreground"
+              >
+                lemurpouch.com
+              </a>
+            </nav>
+          </div>
+
+          <p className="mt-10 border-t border-border pt-6 text-xs text-foreground-subtle">
+            © {new Date().getFullYear()} LemurPouch · Open source under the
+            MIT license.
+          </p>
+        </div>
       </footer>
     </div>
   );
