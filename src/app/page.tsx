@@ -4,6 +4,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { InstallCommand } from "@/components/InstallCommand";
 import { InstallSection } from "@/components/InstallSection";
 import { PeerListMockup } from "@/components/PeerListMockup";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { TrustModel } from "@/components/TrustModel";
 
 const TRUST_SIGNALS = [
@@ -20,8 +21,8 @@ export default function Home() {
       <main className="flex-1">
         <section className="relative overflow-hidden">
           <div aria-hidden className="hero-glow" />
-          <div className="relative mx-auto grid w-full max-w-7xl items-center gap-12 px-6 pt-12 pb-24 lg:grid-cols-[1.4fr_1fr] lg:gap-16 lg:pt-16">
-            <div className="flex flex-col items-start">
+          <div className="relative mx-auto w-full max-w-7xl px-6">
+            <div className="flex items-center justify-between pt-6">
               <div className="flex items-center gap-3">
                 <Image
                   src="/logo.png"
@@ -35,8 +36,12 @@ export default function Home() {
                   LemurPouch
                 </span>
               </div>
-
-              <h1 className="mt-8 text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl">
+              <ThemeToggle />
+            </div>
+          </div>
+          <div className="relative mx-auto grid w-full max-w-7xl items-center gap-12 px-6 pt-6 pb-24 lg:grid-cols-[1.4fr_1fr] lg:gap-16 lg:pt-10">
+            <div className="flex flex-col items-start">
+              <h1 className="text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl">
                 End-to-end encrypted file sharing that{" "}
                 <span className="text-pouch-strong">never leaves your network</span>.
               </h1>
@@ -111,14 +116,7 @@ export default function Home() {
               </div>
               <p className="max-w-sm text-sm leading-relaxed text-foreground-muted">
                 End-to-end encrypted LAN file sharing that runs on the network
-                you&rsquo;ve got. Built with Go, React, and{" "}
-                <a
-                  href="https://paulmillr.com/noble/"
-                  className="text-accent hover:text-accent-strong hover:underline"
-                >
-                  @noble
-                </a>{" "}
-                crypto.
+                you&rsquo;ve got.
               </p>
             </div>
 
@@ -155,12 +153,6 @@ export default function Home() {
                 className="text-foreground-muted hover:text-foreground"
               >
                 MIT license
-              </a>
-              <a
-                href="https://lemurpouch.com"
-                className="text-foreground-muted hover:text-foreground"
-              >
-                lemurpouch.com
               </a>
             </nav>
           </div>

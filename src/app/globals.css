@@ -50,8 +50,35 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Theming uses an explicit data-theme attribute on <html> when the user has
+   chosen a preference (set by the inline script in layout.tsx from a cookie).
+   When no attribute is present we fall back to the OS preference. */
+
+:root[data-theme="dark"] {
+  --background: #0f1117;
+  --background-elevated: #181a23;
+  --background-sunken: #0a0c11;
+  --foreground: #f1f5f9;
+  --foreground-muted: #94a3b8;
+  --foreground-subtle: #64748b;
+  --border: #2a2f3a;
+  --border-strong: #3a4150;
+  --accent: #6092f0;
+  --accent-strong: #8db0f5;
+  --accent-soft: rgba(96, 146, 240, 0.14);
+  --pouch: #f2a04a;
+  --pouch-strong: #f5b777;
+  --pouch-soft: rgba(242, 160, 74, 0.16);
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.12);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.12);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --background: #0f1117;
     --background-elevated: #181a23;
     --background-sunken: #0a0c11;
@@ -72,6 +99,27 @@
     --warning-soft: rgba(251, 191, 36, 0.12);
     --danger: #f87171;
     --danger-soft: rgba(248, 113, 113, 0.12);
+  }
+}
+
+.theme-icon-sun {
+  display: none;
+}
+.theme-icon-moon {
+  display: inline;
+}
+:root[data-theme="dark"] .theme-icon-sun {
+  display: inline;
+}
+:root[data-theme="dark"] .theme-icon-moon {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .theme-icon-sun {
+    display: inline;
+  }
+  :root:not([data-theme]) .theme-icon-moon {
+    display: none;
   }
 }
 
