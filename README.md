@@ -10,6 +10,24 @@ LAN file sharing that works on the most restrictive networks — corporate firew
 
 You run a single relay binary on the LAN. Everyone else opens its URL in a browser. No app to install, no inbound ports, no WebRTC, no STUN/ICE/TURN, no UDP. Two browsers connect outbound to the relay, verify each other by a six-word fingerprint, and exchange end-to-end encrypted files that the relay routes byte-for-byte without ever decrypting.
 
+## Install
+
+Downloads the latest release, verifies its SHA256 against the release's `SHA256SUMS`, drops it into your platform's per-user data directory, and runs it.
+
+**macOS / Linux:**
+
+```sh
+curl -fsSL https://lemurpouch.com/install.sh | sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://lemurpouch.com/install.ps1 | iex
+```
+
+See [One-line install](#one-line-install) below for the install path, idempotency, and how to pass relay flags.
+
 ## Why
 
 Existing sharing tools assume a permissive network. AirDrop wants peer discovery the corporate Wi-Fi has filtered. WebRTC wants a STUN server, a TURN fallback, and ports the firewall isn't going to open. WeTransfer wants to leave the building.
@@ -28,21 +46,7 @@ The full protocol, threat model, and wire format live in the [Protocol Reference
 
 ## Run it
 
-### One-line install (recommended)
-
-Downloads the latest release, verifies its SHA256 against the release's `SHA256SUMS`, drops it into your platform's per-user data directory, and runs it.
-
-**macOS / Linux:**
-
-```sh
-curl -fsSL https://lemurpouch.com/install.sh | sh
-```
-
-**Windows (PowerShell):**
-
-```powershell
-irm https://lemurpouch.com/install.ps1 | iex
-```
+### One-line install
 
 The binary lives at:
 
