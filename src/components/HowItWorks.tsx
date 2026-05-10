@@ -37,7 +37,7 @@ const STEPS: readonly Step[] = [
 export function HowItWorks() {
   return (
     <section className="relative border-t border-border bg-background-sunken/40">
-      <div className="mx-auto w-full max-w-6xl px-6 py-20 lg:py-28">
+      <div className="mx-auto w-full max-w-7xl px-6 py-20 lg:py-28">
         <div className="max-w-2xl">
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-pouch-strong">
             How it works

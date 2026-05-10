@@ -8,7 +8,7 @@ import { TrustModel } from "@/components/TrustModel";
 
 const TRUST_SIGNALS = [
   "MIT licensed",
-  "macOS, Linux, Windows",
+  "Relay for macOS, Linux, Windows",
   "No accounts",
   "No telemetry",
   "Session-only",
@@ -20,7 +20,7 @@ export default function Home() {
       <main className="flex-1">
         <section className="relative overflow-hidden">
           <div aria-hidden className="hero-glow" />
-          <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-6 pt-20 pb-24 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-28">
+          <div className="relative mx-auto grid w-full max-w-7xl items-center gap-12 px-6 pt-12 pb-24 lg:grid-cols-[1.4fr_1fr] lg:gap-16 lg:pt-16">
             <div className="flex flex-col items-start">
               <div className="flex items-center gap-3">
                 <Image
@@ -36,19 +36,19 @@ export default function Home() {
                 </span>
               </div>
 
-              <h1 className="mt-8 max-w-xl text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+              <h1 className="mt-8 text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl">
                 End-to-end encrypted file sharing that{" "}
                 <span className="text-pouch-strong">never leaves your network</span>.
               </h1>
 
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-foreground-muted">
+              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-foreground-muted">
                 Run the relay on any LAN machine. Anyone on your network opens
                 it in a browser, verifies a six-word fingerprint, and sends.
                 Files never touch the cloud — and the relay routes opaque
                 ciphertext it can&rsquo;t read.
               </p>
 
-              <div className="mt-10 w-full max-w-xl">
+              <div className="mt-10 w-full max-w-2xl">
                 <InstallCommand command="curl -fsSL https://lemurpouch.com/install.sh | sh" />
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-foreground-muted">
                   <span>Installs the relay. Clients just open a URL.</span>
@@ -94,7 +94,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-border bg-background-sunken/40">
-        <div className="mx-auto w-full max-w-6xl px-6 py-12">
+        <div className="mx-auto w-full max-w-7xl px-6 py-12">
           <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2.5">
@@ -165,10 +165,25 @@ export default function Home() {
             </nav>
           </div>
 
-          <p className="mt-10 border-t border-border pt-6 text-xs text-foreground-subtle">
-            © {new Date().getFullYear()} LemurPouch · Open source under the
-            MIT license.
-          </p>
+          <div className="mt-10 flex flex-col gap-2 border-t border-border pt-6 text-xs text-foreground-subtle sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              © {new Date().getFullYear()} LemurPouch · Open source under the
+              MIT license.
+            </p>
+            <p>
+              Made with{" "}
+              <span aria-hidden className="text-pouch-strong">
+                ♥
+              </span>
+              <span className="sr-only">love</span> by{" "}
+              <a
+                href="https://aneesiqbal.ai"
+                className="text-foreground-muted hover:text-foreground hover:underline"
+              >
+                Anees Iqbal @steelbrain
+              </a>
+            </p>
+          </div>
         </div>
       </footer>
     </div>

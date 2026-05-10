@@ -89,7 +89,7 @@ const FEATURES: readonly Feature[] = [
 export function Features() {
   return (
     <section className="border-t border-border">
-      <div className="mx-auto w-full max-w-6xl px-6 py-20 lg:py-28">
+      <div className="mx-auto w-full max-w-7xl px-6 py-20 lg:py-28">
         <div className="max-w-2xl">
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-pouch-strong">
             What you get

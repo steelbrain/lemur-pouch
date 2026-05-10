@@ -6,9 +6,9 @@ export function InstallSection() {
       id="install"
       className="border-t border-border"
     >
-      <div className="mx-auto w-full max-w-6xl px-6 py-20 lg:py-28">
-        <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
-          <div className="flex flex-col gap-4">
+      <div className="mx-auto w-full max-w-7xl px-6 py-20 lg:py-28">
+        <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+          <div className="flex min-w-0 flex-col gap-4">
             <span className="text-xs font-semibold uppercase tracking-[0.18em] text-pouch-strong">
               Install
             </span>
@@ -37,7 +37,9 @@ export function InstallSection() {
             </div>
           </div>
 
-          <InstallTabs />
+          <div className="min-w-0">
+            <InstallTabs />
+          </div>
         </div>
       </div>
     </section>
