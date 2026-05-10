@@ -30,7 +30,7 @@ export function Fingerprint({
   if (variant === "inline") {
     return (
       <code
-        className={`font-mono text-foreground [overflow-wrap:anywhere] ${sizeClass[size]} ${className}`}
+        className={`font-mono text-foreground break-words ${sizeClass[size]} ${className}`}
       >
         {text}
       </code>
@@ -40,7 +40,7 @@ export function Fingerprint({
   return (
     <code
       className={
-        `inline-flex max-w-full items-center rounded-md border border-border bg-background-sunken font-mono text-foreground [overflow-wrap:anywhere] ` +
+        `inline-flex max-w-full items-center rounded-md border border-border bg-background-sunken font-mono text-foreground break-words ` +
         `${boxedPaddingClass[size]} ${sizeClass[size]} ${className}`
       }
     >
