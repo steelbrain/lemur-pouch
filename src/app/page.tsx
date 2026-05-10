@@ -66,15 +66,18 @@ export default function Home() {
                 </div>
               </div>
 
-              <ul className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-foreground-subtle">
+              <ul className="mt-8 flex flex-wrap items-center gap-y-1 text-xs text-foreground-subtle">
                 {TRUST_SIGNALS.map((signal, idx) => (
-                  <li key={signal} className="flex items-center gap-2">
-                    {idx > 0 ? (
-                      <span aria-hidden className="text-foreground-subtle/60">
+                  <li key={signal} className="flex items-center">
+                    <span>{signal}</span>
+                    {idx < TRUST_SIGNALS.length - 1 ? (
+                      <span
+                        aria-hidden
+                        className="mx-2 text-foreground-subtle/60"
+                      >
                         ·
                       </span>
                     ) : null}
-                    <span>{signal}</span>
                   </li>
                 ))}
               </ul>
