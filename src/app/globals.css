@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --background-elevated: #f9fafb;
+  --foreground: #111827;
+  --foreground-muted: #6b7280;
+  --border: #e5e7eb;
+  --accent: #1d62e8;
+  --accent-soft: rgba(29, 98, 232, 0.08);
+  --pouch: #f2a04a;
+  --pouch-soft: rgba(242, 160, 74, 0.12);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-background-elevated: var(--background-elevated);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-pouch: var(--pouch);
+  --color-pouch-soft: var(--pouch-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f1117;
+    --background-elevated: #181a23;
+    --foreground: #f1f5f9;
+    --foreground-muted: #94a3b8;
+    --border: #2a2f3a;
+    --accent: #6092f0;
+    --accent-soft: rgba(96, 146, 240, 0.14);
+    --pouch: #f2a04a;
+    --pouch-soft: rgba(242, 160, 74, 0.16);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+}
