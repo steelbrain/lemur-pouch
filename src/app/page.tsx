@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { HowItWorks } from "@/components/HowItWorks";
 import { InstallCommand } from "@/components/InstallCommand";
 import { PeerListMockup } from "@/components/PeerListMockup";
 
@@ -82,6 +83,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <HowItWorks />
       </main>
 
       <footer className="border-t border-border py-6 text-center text-sm text-foreground-muted">
